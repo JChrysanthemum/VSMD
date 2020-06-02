@@ -5,9 +5,27 @@ from ctypes import *
 from types import MappingProxyType, DynamicClassAttribute
 from typing import overload
 
+# plus base for motor
 step_base = 200
-mm_pp = 800
-spd = 0.5
+
+# plus msc for motor
+step_mcs = 32
+
+# plus per around
+# The motor has ppc plus to rotate a complete around
+ppa = step_base * step_mcs
+
+# The spacing of send for plus: send_spacing ms/plus
+# Unit : mm
+send_spacing = 0.5
+
+# plus per millimeter
+p_pmm = 800
+
+# speed for motor
+# Unit : mm/s
+# spd = (p_pmm * send_spacing / 1000ms/s)^-1
+spd = 2.5
 
 
 class OhEnum(Enum):
@@ -438,7 +456,7 @@ class CommonCMD(object):
             tar = DeviceTable.SliderY
         elif device == "Z":
             tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=int(speed*mm_pp))
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=int(speed*p_pmm))
         return cmd
 
     @staticmethod
@@ -468,7 +486,7 @@ class CommonCMD(object):
             tar = DeviceTable.SliderY
         elif device == "Z":
             tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.POS, data=pos*mm_pp)
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.POS, data=pos*p_pmm)
         return cmd
 
     @staticmethod
@@ -483,7 +501,7 @@ class CommonCMD(object):
             tar = DeviceTable.SliderY
         elif device == "Z":
             tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.RMV, data=dis*mm_pp)
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.RMV, data=dis*p_pmm)
         return cmd
 
     @staticmethod
@@ -533,5 +551,5 @@ class CommonCMD(object):
 # print(CommonCMD.move_dis("ALL", -10))
 # print(CommonCMD.read_data_regs("X0", DataRegTable.SPD, 1))
 
-# print(CommonCMD._CommonCMD__easy_cmd(tar=DeviceTable.BroadCast, src=DeviceTable.Pi, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=16*mm_pp))
+# print(CommonCMD._CommonCMD__easy_cmd(tar=DeviceTable.BroadCast, src=DeviceTable.Pi, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=16*p_pmm))
 

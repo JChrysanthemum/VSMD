@@ -326,7 +326,6 @@ def str2can_msg(raw_cmd: str):
 
 
 if __name__ == "__main__":
-    pass
     bus = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000)
     cnt = 0
     while True:
