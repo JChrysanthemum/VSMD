@@ -1,7 +1,7 @@
 from enum import IntEnum, Enum
-from collections import OrderedDict
+import can
 from ctypes import *
-    #pointer, cast, c_int, c_float, POINTER
+# pointer, cast, c_int, c_float, POINTER
 from types import MappingProxyType, DynamicClassAttribute
 from typing import overload
 
@@ -15,17 +15,23 @@ step_mcs = 32
 # The motor has ppc plus to rotate a complete around
 ppa = step_base * step_mcs
 
-# The spacing of send for plus: send_spacing ms/plus
-# Unit : mm
-send_spacing = 0.5
+# Speed of motor for plus
+# Unit : plus pre second
+spd_p = 19200
 
-# plus per millimeter
-p_pmm = 800
+# millimeter per around
+mpa = 8
+
+# plus per mm
+ppmm = ppa/mpa
 
 # speed for motor
 # Unit : mm/s
 # spd = (p_pmm * send_spacing / 1000ms/s)^-1
-spd = 2.5
+spd = spd_p/ppa*mpa
+
+# Note: This the full speed of motor, and it need a time to accelerate.
+# for spd 19200.00, it needs almost 2 second to speed up
 
 
 class OhEnum(Enum):
@@ -53,8 +59,8 @@ class OhEnum(Enum):
             self.__init_record()
         i = 0
         for v in self.__record:
-            if self.name == v.name and i < self.__record.__len__()-1:
-                return self.__record[i+1]
+            if self.name == v.name and i < self.__record.__len__() - 1:
+                return self.__record[i + 1]
             i += 1
         raise ValueError("{!r} is the last key".format(self.name))
 
@@ -138,20 +144,20 @@ class ExtIdTable(IntEnum):
 
 
 class DeviceTable(Enum):
-            """Device table for our project
+    """Device table for our project
 
             ..note:
                 1. device = DeviceTable(id)  # get a enum
                 2. id=DeviceTable.xxx.value  # get a string
             """
-            # Target device only
-            BroadCast = "000000000"
-            SliderX0 = "000000001"
-            SliderX1 = "000000010"
-            SliderY = "000000100"
-            SliderZ = "000000101"
-            Pi = "000000011"
-            UnKnow = "111111111"
+    # Target device only
+    BroadCast = "000000000"
+    SliderX0 = "000000001"
+    SliderX1 = "000000010"
+    SliderY = "000000011"
+    SliderZ = "000000100"
+    Pi = "000001111"
+    UnKnow = "111111111"
 
 
 class SensorValueTable(IntEnum):
@@ -198,28 +204,32 @@ class CWTable(Enum):
     CMD = "11"  # "Command"
 
 
+# 20K	0x1C2132
+# 25K	0x168132
+# 30K	0x12C132
+# 40K	0xE1132
+# 50K	0xB4132
+# 60K	0x5A163
+# 75K	0x78132
+# 80K	0x4B153
+# 90K	0x4B143
+# 100K	0x5A132
+# 125K	0x48132
+# 150K	0x3C132
+# 200K	0x2D132
+# 250K	0x24132
+# 300K	0x1E132
+# 400K	0xF153
+# 500K	0x12132
+# 600K	0x9163
+# 750K	0x8153
+# 900K	0x6163
+# 1000K	0x9132
+
 BaudRateDict = {
-    "001C2132" : 20000,
-    "00168132" : 25000,
-    "0012C132" : 30000,
-    "000E1132" : 40000,
-    "0000B413" : 50000,
-    "00005A16" : 60000,
-    "00007813" : 75000,
-    "00004B15" : 80000,
-    "00004B14" : 90000,
-    "00005A13" : 100000,
-    "00004813" : 125000,
-    "00003C13" : 150000,
-    "00002D13" : 200000,
-    "00002413" : 250000,
-    "00001E13" : 300000,
-    "0000F153" : 400000,
-    "00012132" : 500000,
-    "00009163" : 600000,
-    "00008153" : 750000,
-    "00006163" : 900000,
-    "00009132" : 1000000,
+    "0005a132": 100000,
+    "00012132": 500000,
+
 }
 
 
@@ -260,44 +270,43 @@ SafeInf = [
 
 
 class DataRegTable(OhEnum):
-
     # RegNae   ADR       Description              Detail
     CID = ["0000000", "Channel ID", "Determined by motor"]  # 0x00
     BDR = ["0000001", "Baud Rate", "Default 132000"]  # 0x01
     MCS = ["0000010", "Motor Control Subdivision",
-                "0 : one step \n1 : 1/2\n2 : 1/4\n3 : 1/8\n4: 1/16\n5 : 1/32\n"
-                "6 : 1/64 (Ser-045,13X,14X Only)\n7:1/128 (Ser-045,13X,14X Only)\n"
-                "8 : 1/256 (Ser-045,13X,14X Only)"]  # 0x02
+           "0 : one step \n1 : 1/2\n2 : 1/4\n3 : 1/8\n4: 1/16\n5 : 1/32\n"
+           "6 : 1/64 (Ser-045,13X,14X Only)\n7:1/128 (Ser-045,13X,14X Only)\n"
+           "8 : 1/256 (Ser-045,13X,14X Only)"]  # 0x02
     SPD = ["0000011", "Target Speed", "(-192000,192000)pps"]  # 0x03
     ACC = ["0000100", "Accelerate", "(0,192000000)pps/s"]  # 0x04
     DEC = ["0000101", "Decelerate", "(0,192000000)pps/s"]  # 0x05
     CRA = ["0000110", "Current Accelerate", "0-2.5A(Series-025)\n0-4.5A(Series-045)"]  # 0x06
     CRN = ["0000111", "Current Normal", "0-2.5A(Series-025)\n0-4.5A(Series-045)"]  # 0x07
     CRH = ["0001000", "Current Hold", "0-2.5A(Series-025)\n0-4.5A(Series-045)"]  # 0x08
-    S1F_S1R_S2F_S2R = ["0001001","Function Settings for S1,S2", "See SensorValueTable"]  # 0x09
-    S3F_S3R_S4F_S4R = ["0001010","Function Settings for S3,S4", "See SensorValueTable"]  # 0x0A
-    S5F_S5R_S6F_S6R = ["0001011","Function Settings for S5,S6", "See SensorValueTable"]  # 0x0B
+    S1F_S1R_S2F_S2R = ["0001001", "Function Settings for S1,S2", "See SensorValueTable"]  # 0x09
+    S3F_S3R_S4F_S4R = ["0001010", "Function Settings for S3,S4", "See SensorValueTable"]  # 0x0A
+    S5F_S5R_S6F_S6R = ["0001011", "Function Settings for S5,S6", "See SensorValueTable"]  # 0x0B
     _R1 = ["0001100", "Reserved", "Blank"]  # 0x0C
     S_CONFIG = ["0001101", "Settings for S1-S6",
                 "0 : Input\n1:Output\nBit Definition\nBIT0 : Fixed Input for S1\nBIT1 : Fixed Input for S2\n"
                 "BIT2 : S3\nBIT3 : S4\nBIT4 : S5\nBIT5 : S6"]  # 0x0D
     ZMD = ["0001110", "Zeroing mode definition",
-                "0 : Zeroing off\n1 : Zeroing once\n2 : zeroing once + safe position\n3 : Double zeroing\n"
-                "4 : Double zeroing + safe position\n5 : Non-sense zeroing (Series-136/146)"]  # 0x0E
+           "0 : Zeroing off\n1 : Zeroing once\n2 : zeroing once + safe position\n3 : Double zeroing\n"
+           "4 : Double zeroing + safe position\n5 : Non-sense zeroing (Series-136/146)"]  # 0x0E
     OSV = ["0001111", "Open zeroing Sensor level", "0 : low level\n1 : high level"]  # 0x0F
     SNR = ["0010000", "Sensor Number of zeroing", "0 : S1\n1 : S2\n2 : S3\n3 : S4\n4 : S5\n5 : S6"]  # 0x10
     ZSD = ["0010001", "Zeroing's Speed", "Not Defined"]  # 0x11
     ZSP = ["0010010", "Zeroing's Safe-Position", "Not Defined"]  # 0x12
     DMD = ["0010011", "Offline Mod", "0 : Normal mode\n1 : zeroing before offline"]  # 0x13
     DAR = ["0010100", "Duration when online and no communication",
-                "0 : No auto running\n1-60 : time(sec)"]  # 0x14
+           "0 : No auto running\n1-60 : time(sec)"]  # 0x14
     _R2 = ["0010101", "Reserved", "Blank"]  # 0x15
     _R3 = ["0010110", "Reserved", "Blank"]  # 0x16
     MSR_MSV_PSR_PSV = ["0010111", "MSR_MSV_PSR_PSV",
-                        "MSR (Negative sensor)\n0 : No negative limit\n1 : S1\n2 : S2\n3 :S3\n4 : S4"
-                        "5 : S5\n6 : S6\nMSV (Negative trigger level)\n0 : low level\n1 : high level\n"
-                        "PSR (Positive Sensor)\n0 : 1 No positive\n1 : S1\n2 : S2\n3 : S3\n4 : S4\n5 : S5\n"
-                        "6 : S6\nPSV (Positive trigger level)\n0 : 1 low level\n1 : high level"]  # 0x17
+                       "MSR (Negative sensor)\n0 : No negative limit\n1 : S1\n2 : S2\n3 :S3\n4 : S4"
+                       "5 : S5\n6 : S6\nMSV (Negative trigger level)\n0 : low level\n1 : high level\n"
+                       "PSR (Positive Sensor)\n0 : 1 No positive\n1 : S1\n2 : S2\n3 : S3\n4 : S4\n5 : S5\n"
+                       "6 : S6\nPSV (Positive trigger level)\n0 : 1 low level\n1 : high level"]  # 0x17
     PAE = ["0011000", "Power-on Attach Enable-energy", "0 : No auto ENA\n1 : Auto ENA"]  # 0x18
     CAF = ["0011001", "Command Attach FAQ.", "0 : Not support\n1 : Support"]  # 0x19
     ZAR = ["0011010", "Zeroing After Power-on", "0 : No zeroing\n1: zeroing"]  # 0x1A
@@ -321,8 +330,8 @@ class StatusRegTable(OhEnum):
 
 
 def hex2float(_hex):
-    i = int(_hex, 16)                   # convert from hex to a Python int
-    cp = pointer(c_int(i))           # make this into a c integer
+    i = int(_hex, 16)  # convert from hex to a Python int
+    cp = pointer(c_int(i))  # make this into a c integer
     fp = cast(cp, POINTER(c_float))  # cast the int pointer to a float pointer
     return fp.contents.value
 
@@ -353,6 +362,18 @@ def hex2int32(_hex):
     return fp.contents.value
 
 
+def str2can_msg(raw_cmd: str):
+    extid = int(raw_cmd.split("#")[0], 16)
+    data_frame = []
+    datas = raw_cmd.split("#")[1]
+    for i in range(int(datas.__len__()/2)):
+        data_frame.append(int(datas[i*2:i*2 + 2], 16))
+    msg_snd = can.Message(arbitration_id=extid, channel="can0",
+                          data=data_frame,
+                          is_extended_id=True)
+    return msg_snd
+
+
 class CommonCMD(object):
 
     @staticmethod
@@ -372,8 +393,8 @@ class CommonCMD(object):
         :return:
         """
 
-        data_frame = "0"*16
-        if cw == CWTable.R_Stat_Reg or cw == CWTable.R_Data_Reg :
+        data_frame = "0" * 16
+        if cw == CWTable.R_Stat_Reg or cw == CWTable.R_Data_Reg:
             # It wrote in motor
             print("it determined by motor !")
             return "00000000#0000000000000000"
@@ -382,30 +403,36 @@ class CommonCMD(object):
             cmd0reg = cmd0reg.value[0]
             if reg_name in [DataRegTable.SPD, DataRegTable.ACC, DataRegTable.DEC, DataRegTable.CRA, DataRegTable.CRN,
                             DataRegTable.CRH, ]:
-                data_frame = str(float2hex(data))[2:].rjust(16, "0")
+                data_frame = str(float2hex(data))[2:].rjust(8, "0")
             elif reg_name in [DataRegTable.CID, DataRegTable.MCS]:
-                data_frame = str(int2hex(data))[2:].rjust(16, "0")
+                data_frame = str(int2hex(data))[2:].rjust(8, "0")
             elif reg_name == DataRegTable.BDR:
-                data_frame = BaudRateDict[data]
+                for k, v in BaudRateDict.items():
+                    if v == data:
+                        data_frame = k
+                        break
+                if data_frame == "0" * 16:
+                    raise Exception("Not a valid BDR")
             else:
                 print("Not Defined ! ")
-                data_frame = str(int2hex(data))[2:].rjust(16, "0")
-        else: # CWTable.CMD
-            if cmd0reg in [CMDTable.ENA, CMDTable.OFF]:
-                data_frame = "0"*0  # dlc = 0
+                data_frame = str(int2hex(data))[2:].rjust(8, "0")
+        else:  # CWTable.CMD
+            if cmd0reg in [CMDTable.ENA, CMDTable.OFF, CMDTable.SAV]:
+                data_frame = "0" * 0  # dlc = 0
             elif cmd0reg in [CMDTable.STP]:
-                data_frame = str(int2hex(data))[2:].rjust(4, "0")   # dlc = 2
+                data_frame = str(int2hex(data))[2:].rjust(4, "0")  # dlc = 2
             elif cmd0reg == CMDTable.MOV:
                 data_frame = str(float2hex(data))[2:].rjust(8, "0")  # dlc = 4
             elif cmd0reg in [CMDTable.POS, CMDTable.RMV]:
                 data_frame = str(int2hex(data))[2:].rjust(8, "0")  # dlc = 4
             elif cmd0reg in [CMDTable.READ_DATA_REGS, CMDTable.READ_STATUS_REGS]:
-                data_frame = str(int2hex(int(data[0], 2)))[2:].rjust(2, "0") + str(int2hex(data[1]))[2:].rjust(2, "0")  # dlc = 4
+                data_frame = str(int2hex(int(data[0], 2)))[2:].rjust(2, "0") + str(int2hex(data[1]))[2:].rjust(2,
+                                                                                                               "0")  # dlc = 4
+
             else:
-                data_frame = "0"*16  # dlc = 8
+                data_frame = "0" * 16  # dlc = 8
 
             cmd0reg = cmd0reg.value
-
         ext_frame = "000" + tar.value + ("0" if tar != DeviceTable.BroadCast else "1") + src.value + cw.value + cmd0reg
         # print("Bin Ext:", ext_frame)
         ext_frame = str(int2hex(int(ext_frame, 2)))[2:].rjust(8, "0")
@@ -415,37 +442,42 @@ class CommonCMD(object):
         # return [ext_frame, data_frame]
 
     @staticmethod
-    def enable_motor(device: str):
-        device = device.upper()
-        tar = DeviceTable.SliderY
-        src = DeviceTable.Pi
-        if device == "ALL":
+    def _get_tar_device(name: str, unsafe=False):
+        name = name.upper()
+        tar = None
+        if name == "ALL":
             # Turn off the YZ and control two Z
             tar = DeviceTable.BroadCast
-        elif device == "Y":
+        elif name == "Y":
             tar = DeviceTable.SliderY
-        elif device == "Z":
+        elif name == "Z":
             tar = DeviceTable.SliderZ
+        if unsafe:
+            if name == "X0":
+                tar = DeviceTable.SliderX0
+            if name == "X1":
+                tar = DeviceTable.SliderX1
+
+        if tar is None:
+            raise Exception("Target device not found")
+        return tar
+
+    @staticmethod
+    def enable_motor(device: str):
+        tar = CommonCMD._get_tar_device(device)
+        src = DeviceTable.Pi
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.ENA, data=0)
         return cmd
 
     @staticmethod
     def disable_motor(device: str):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
-        if device == "ALL":
-            # Turn off the YZ and control two Z
-            tar = DeviceTable.BroadCast
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.OFF, data=0)
         return cmd
 
     @staticmethod
-    def move_motor(device: str, speed: int):
+    def move_motor(device: str, speed: float):
         device = device.upper()
         tar = DeviceTable.SliderY
         src = DeviceTable.Pi
@@ -456,100 +488,58 @@ class CommonCMD(object):
             tar = DeviceTable.SliderY
         elif device == "Z":
             tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=int(speed*p_pmm))
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=speed)
         return cmd
 
     @staticmethod
     def stop_motor(device: str):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
-        if device == "ALL":
-            # Turn off the YZ and control two Z
-            tar = DeviceTable.BroadCast
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.STP, data=1)
         return cmd
 
     @staticmethod
     def move_to(device: str, pos: int):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
-        if device == "ALL":
-            # Turn off the YZ and control two Z
-            tar = DeviceTable.BroadCast
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.POS, data=pos*p_pmm)
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.POS, data=pos * ppmm)
         return cmd
 
     @staticmethod
     def move_dis(device: str, dis: int):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
-        if device == "ALL":
-            # Turn off the YZ and control two Z
-            tar = DeviceTable.BroadCast
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
-        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.RMV, data=dis*p_pmm)
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.RMV, data=dis)
         return cmd
 
     @staticmethod
     def read_status_regs(device: str, reg: StatusRegTable, cnt: int):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device, unsafe=True)
         src = DeviceTable.Pi
-        if device == "X0":
-            tar = DeviceTable.SliderX0
-        if device == "X1":
-            tar = DeviceTable.SliderX1
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.READ_STATUS_REGS,
                                    data=[reg.value[0], cnt])
         return cmd
 
     @staticmethod
     def read_data_regs(device: str, reg: DataRegTable, cnt: int):
-        device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device, unsafe=True)
         src = DeviceTable.Pi
-        if device == "X0":
-            tar = DeviceTable.SliderX0
-        if device == "X1":
-            tar = DeviceTable.SliderX1
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.READ_DATA_REGS,
                                    data=[reg.value[0], cnt])
         return cmd
 
-# CommonCMD.easy_cmd(tar=DeviceTable.BroadCast, src=DeviceTable.SliderX0, cw=CWTable.CMD,
-#                    cmd0reg=CMDTable.READ_STATUS_REGS, data=[0, 1])
-# CommonCMD.easy_cmd(tar=DeviceTable.BroadCast, src=DeviceTable.SliderX0, cw=CWTable.W_Data_Reg,
-#                    cmd0reg=DataRegTable.CRN, data=2.0)
-# print(hex2int32("00012132"))
+    @staticmethod
+    def write_data_regs(device: str, reg: DataRegTable, data):
+        tar = CommonCMD._get_tar_device(device, unsafe=True)
+        src = DeviceTable.Pi
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.W_Data_Reg, cmd0reg=reg,
+                                   data=data)
+        return cmd
 
-# print(float2hex(-12800.0))
-# print(CommonCMD.enable_motor("ALL"))
-# print(CommonCMD.move_motor("ALL", -16))
-# print(CommonCMD.disable_motor("ALL"))
-# print(CommonCMD.move_dis("ALL", -10))
-# print(CommonCMD.read_data_regs("X0", DataRegTable.SPD, 1))
-
-# print(CommonCMD._CommonCMD__easy_cmd(tar=DeviceTable.BroadCast, src=DeviceTable.Pi, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=16*p_pmm))
+    @staticmethod
+    def save(device: str):
+        tar = CommonCMD._get_tar_device(device, unsafe=True)
+        src = DeviceTable.Pi
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.SAV, data=0)
+        return cmd
 

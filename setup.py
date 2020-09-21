@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="VSMD",
-    version="0.1.0",
+    version="0.1.1",
     author="jiangxt",
     author_email="624099049@qq.com",
     description="Controller for VSMD CAN motor",
