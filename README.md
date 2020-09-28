@@ -4,7 +4,8 @@ Controller for VSMD can motor
 
 ## Debug model
 
-Explained by doc file [VSMD1X6_SERIES_V1.0.pdf](doc/VSMD1X6_SERIES_V1.0.pdf), it's
+Explained by doc file 
+[VSMD1X6_SERIES_V1.0.pdf](https://github.com/JChrysanthemum/VSMD/blob/master/doc/VSMD1X6_SERIES_V1.0.pdf), it's
 easy to convert can.message to meaningful frame.
 
 ```
@@ -43,15 +44,8 @@ For an example,say frame 0004079F#0020000000000000 , it can be interpreted as be
 
 ## Quick VSMD-CAN setup and drive
 
-More function will be added soon.
+See in CommonCMD in [VSMD1X6.py](https://github.com/JChrysanthemum/VSMD/blob/master/vsmd/VSMD1X6.py)
 
-```
-from VSMD import CANFunctionList
-
-bus = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000)
-CANFunctionList.move("X",10,bus)
-
-```
 
 ## Generate your own CMD
 
@@ -110,6 +104,9 @@ Which contains these sub-function:
     READ DATA REGS  0x1F
         
     Follow the PDF
-        
-Note : set_data_regs is coming soon
+    
+* write_data_regs(device: str, reg: DataRegTable, data):
+
+  Note that you must use save after write some registers
+
 

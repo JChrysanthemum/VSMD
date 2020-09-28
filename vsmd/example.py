@@ -70,9 +70,9 @@ def random_move_test():
     bus = can.interface.Bus(bustype='socketcan', channel="can0", bitrate=500000)
     bus.send(str2can_msg(CommonCMD.enable_motor("All")))
     for i in range(50000):
-        distance = int(random.choice((1, -1))*800*random.uniform(5, 10))
+        distance = int(random.choice((1, -1))*800*random.uniform(0.1, 0.5))
         # sleep_time = 2 * distance/19200.0
-        sleep_time = distance / 19200.0 + 3
+        sleep_time = distance / 19200.0 + 0.5
         cmd = CommonCMD.move_dis("All", distance)
         print(i, cmd)
         # os.system("cansend can0 %s"% cmd)
@@ -81,14 +81,14 @@ def random_move_test():
     bus.send(str2can_msg(CommonCMD.stop_motor("All")))
 
 
-def random_move_test2():
-    f = open("log.txt", "a")
-    for i in range(100):
-        print(i)
-        os.system("cansend can0 0004178b#000000c8")
-        output = os.popen("ip -details -statistics link show can0 ").read()
-        output = "\n****%d****\n" % i + output
-        print(output)
-        f.write(output)
-        time.sleep(2)
-
+# print(hex2int32("feeeeeee"))
+# print(CommonCMD.read_data_regs("All",DataRegTable.BDR,1))
+# initialize_motor(_cid=4)
+# random_move_test()
+# for cmd in [
+#     CommonCMD.enable_motor("All"),
+#     CommonCMD.move_dis("All", 200),
+#     CommonCMD.stop_motor("All")
+# ]:
+#     print(cmd)
+# print(CommonCMD.read_data_regs("All", DataRegTable.MCS, 1))

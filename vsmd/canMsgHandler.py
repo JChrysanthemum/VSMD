@@ -294,11 +294,11 @@ class CanMsgListener(Process):
         self.debug_msg = ""
         self.exitFlag = False
         self.cnt = 0
+        self.bus = can.interface.Bus(bustype='socketcan', channel=self.channel, bitrate=self.bitrate)
 
     def run(self):
-        _bus = can.interface.Bus(bustype='socketcan', channel=self.channel, bitrate=self.bitrate)
         i = 0
-        for _msg in _bus:
+        for _msg in self.bus:
             if self.exitFlag:
                 return
             print(i)
