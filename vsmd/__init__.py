@@ -1,4 +1,4 @@
-from canMsgHandler import *
-from VSMD1X6 import *
+from .canMsgHandler import *
+from .VSMD1X6 import *
 
 

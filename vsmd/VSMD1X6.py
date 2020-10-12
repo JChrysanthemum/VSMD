@@ -267,6 +267,10 @@ SafeInf = [
     StatusValueTable.ENC_ERR, StatusValueTable.FLASH_ERR, StatusValueTable.FLT,
     StatusValueTable.CMD_WRG
 ]
+SensorInf = [
+    StatusValueTable.S1, StatusValueTable.S2, StatusValueTable.S3, StatusValueTable.S4, StatusValueTable.S5,
+    StatusValueTable.S6,
+]
 
 
 class DataRegTable(OhEnum):

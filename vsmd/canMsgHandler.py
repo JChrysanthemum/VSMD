@@ -1,6 +1,6 @@
 import can
 import time
-from VSMD1X6 import *
+from .VSMD1X6 import *
 from multiprocessing import Process
 
 
@@ -155,6 +155,7 @@ class VsmdCanFrame(object):
 
             self.regs_values = {}
             self.status = None
+            self.sensors = None
 
             self.ERROR_FLG = False
             self.debug_msg = ""
@@ -181,11 +182,11 @@ class VsmdCanFrame(object):
 
                         # Use float as Data format in these register
                         if _reg in [DataRegTable.SPD, DataRegTable.ACC, DataRegTable.DEC, DataRegTable.CRA,
-                                    DataRegTable.CRN, DataRegTable.CRH, ]:
+                                    DataRegTable.CRN, DataRegTable.CRH, StatusRegTable.SPD]:
                             _result.append([_reg.name, hex2float(raw_data)])
                         # Use int as Data format in these register
                         elif _reg in [DataRegTable.CID, DataRegTable.MCS, DataRegTable.PAE, DataRegTable.CAF,
-                                      DataRegTable.ZAR, DataRegTable.EMOD]:
+                                      DataRegTable.ZAR, DataRegTable.EMOD, StatusRegTable.POS]:
                             _result.append([_reg.name, hex2int32(raw_data)])
                         # Use Enum for Baud rate
                         elif _reg == DataRegTable.BDR:
@@ -195,7 +196,7 @@ class VsmdCanFrame(object):
                                 print("BaudRate Set Error", e)
                                 print(BaudRateDict)
                                 raise e
-                        elif _reg in [DataRegTable.MSR_MSV_PSR_PSV]:
+                        elif _reg in [DataRegTable.MSR_MSV_PSR_PSV, StatusRegTable.STATUS]:
                             _result.append([_reg.name, raw_data])
                         else:
                             print("Not specified data format, transform to int32")
@@ -214,6 +215,7 @@ class VsmdCanFrame(object):
                 # Reverse this string because it count from right
                 _data = _data[::-1]
                 _result = []
+                _sensor = []
                 for record in StatusValueTable:
                     _v = _data[record.value[0]]
                     if record in SafeInf and _v == "1":
@@ -221,7 +223,11 @@ class VsmdCanFrame(object):
                         _result.append(
                             [record.value[1], _v + " / " + record.value[2]]
                         )
-                return _result
+                    if record in SensorInf:
+                        _sensor.append(
+                            [record.value[1], _v]
+                        )
+                return _result, _sensor
 
             if self.cw == CWTable.R_Stat_Reg:
                 self.regs_values = _fill_reg_inf(_cnt=self.cnt_data, _data=data_msg, _my_t=StatusRegTable)
@@ -229,9 +235,9 @@ class VsmdCanFrame(object):
                 keys = [x[0] for x in self.regs_values]
                 if "STATUS" in keys and "SPD" not in keys:
                     if "POS" in keys:
-                        self.status = _fill_stat_value_inf(data_msg[1])
+                        (self.status, self.sensors) = _fill_stat_value_inf(data_msg[1])
                     else:
-                        self.status = _fill_stat_value_inf(data_msg[0])
+                        (self.status, self.sensors) = _fill_stat_value_inf(data_msg[0])
             elif self.cw == CWTable.R_Data_Reg:
                 self.regs_values = _fill_reg_inf(_cnt=self.cnt_data, _data=data_msg, _my_t=DataRegTable)
             elif self.cw == CWTable.W_Data_Reg:  # Write one register Once

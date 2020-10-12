@@ -1,4 +1,4 @@
-from VSMD1X6 import *
+from .VSMD1X6 import *
 # CommonCMD, DataRegTable, StatusRegTable, DeviceTable, CWTable, CMDTable, str2can_msg
 import time, random
 import os
@@ -85,7 +85,7 @@ def random_move_test():
 # print(CommonCMD.read_data_regs("All", DataRegTable.CID, 1))
 # print(CommonCMD.read_status_regs("All", StatusRegTable.SPD, 1))
 # print(CommonCMD.read_data_regs("All", DataRegTable.ZMD, 1))
-# print(CommonCMD.write_data_regs("All", DataRegTable.ZMD, 1))
+print(CommonCMD.write_data_regs("All", DataRegTable.MSR_MSV_PSR_PSV, "05000600"))
 # initialize_motor(_cid=4)
 # random_move_test()
 # for cmd in [
