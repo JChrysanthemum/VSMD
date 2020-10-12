@@ -404,7 +404,8 @@ class CommonCMD(object):
             if reg_name in [DataRegTable.SPD, DataRegTable.ACC, DataRegTable.DEC, DataRegTable.CRA, DataRegTable.CRN,
                             DataRegTable.CRH, ]:
                 data_frame = str(float2hex(data))[2:].rjust(8, "0")
-            elif reg_name in [DataRegTable.CID, DataRegTable.MCS]:
+            elif reg_name in [DataRegTable.CID, DataRegTable.MCS, DataRegTable.PAE, DataRegTable.CAF,
+                              DataRegTable.EMOD]:
                 data_frame = str(int2hex(data))[2:].rjust(8, "0")
             elif reg_name == DataRegTable.BDR:
                 for k, v in BaudRateDict.items():
@@ -413,6 +414,8 @@ class CommonCMD(object):
                         break
                 if data_frame == "0" * 16:
                     raise Exception("Not a valid BDR")
+            elif reg_name == DataRegTable.MSR_MSV_PSR_PSV:
+                data_frame = str(data).rjust(8, "0")
             else:
                 print("Not Defined ! ")
                 data_frame = str(int2hex(data))[2:].rjust(8, "0")
@@ -479,15 +482,8 @@ class CommonCMD(object):
     @staticmethod
     def move_motor(device: str, speed: float):
         device = device.upper()
-        tar = DeviceTable.SliderY
+        tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
-        if device == "ALL":
-            # Turn off the YZ and control two Z
-            tar = DeviceTable.BroadCast
-        elif device == "Y":
-            tar = DeviceTable.SliderY
-        elif device == "Z":
-            tar = DeviceTable.SliderZ
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.MOV, data=speed)
         return cmd
 
@@ -510,6 +506,13 @@ class CommonCMD(object):
         tar = CommonCMD._get_tar_device(device)
         src = DeviceTable.Pi
         cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.RMV, data=dis)
+        return cmd
+
+    @staticmethod
+    def zero(device: str):
+        tar = CommonCMD._get_tar_device(device)
+        src = DeviceTable.Pi
+        cmd = CommonCMD.__easy_cmd(tar=tar, src=src, cw=CWTable.CMD, cmd0reg=CMDTable.ZERO_START, data=0)
         return cmd
 
     @staticmethod

@@ -184,7 +184,8 @@ class VsmdCanFrame(object):
                                     DataRegTable.CRN, DataRegTable.CRH, ]:
                             _result.append([_reg.name, hex2float(raw_data)])
                         # Use int as Data format in these register
-                        elif _reg in [DataRegTable.CID, DataRegTable.MCS]:
+                        elif _reg in [DataRegTable.CID, DataRegTable.MCS, DataRegTable.PAE, DataRegTable.CAF,
+                                      DataRegTable.ZAR, DataRegTable.EMOD]:
                             _result.append([_reg.name, hex2int32(raw_data)])
                         # Use Enum for Baud rate
                         elif _reg == DataRegTable.BDR:
@@ -194,7 +195,10 @@ class VsmdCanFrame(object):
                                 print("BaudRate Set Error", e)
                                 print(BaudRateDict)
                                 raise e
+                        elif _reg in [DataRegTable.MSR_MSV_PSR_PSV]:
+                            _result.append([_reg.name, raw_data])
                         else:
+                            print("Not specified data format, transform to int32")
                             _result.append([_reg.name, hex2int32(raw_data)])
                     except ValueError as e:
                         war_log = VsmdCanFrame.log_formatter("Warning", [("Message", e)])
