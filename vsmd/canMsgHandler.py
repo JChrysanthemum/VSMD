@@ -209,11 +209,12 @@ class VsmdCanFrame(object):
 
             def _fill_stat_value_inf(_data):
 
-                # 32bit and fill zero in left
-                _data = str(bin(int(_data, 16)))[2:].rjust(32, "0")
+                # 32bit and fill zero in right before revision
 
+                _data = str(bin(int(_data, 16)))[2:].rjust(32, "0")
                 # Reverse this string because it count from right
                 _data = _data[::-1]
+
                 _result = []
                 _sensor = []
                 for record in StatusValueTable:
@@ -307,27 +308,18 @@ class CanMsgListener(Process):
         self.bus = can.interface.Bus(bustype='socketcan', channel=self.channel, bitrate=self.bitrate)
 
     def run(self):
-        i = 0
         for _msg in self.bus:
             if self.exitFlag:
                 return
-            print(i)
             self.handle(_msg)
-            i += 1
+            self.cnt += 1
 
     @staticmethod
     def handle(msg):
         frame = VsmdCanFrame(msg, debug=True)
-        # print(frame.ext_frame.target_device)
         if frame.ERROR_FLG:
             debug_msg = frame.debug_msg
             print(debug_msg)
-
-        # pass
-
-        # while not self.exitFlag:
-        #     print("Hi")
-        #
 
 
 if __name__ == "__main__":

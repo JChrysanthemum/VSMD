@@ -152,8 +152,8 @@ class DeviceTable(Enum):
             """
     # Target device only
     BroadCast = "000000000"
-    SliderX0 = "000000001"
-    SliderX1 = "000000010"
+    SliderX1 = "000000001"
+    SliderX2 = "000000010"
     SliderY = "000000011"
     SliderZ = "000000100"
     Pi = "000001111"
@@ -254,8 +254,8 @@ class StatusValueTable(OhEnum):
     ACTION = [11, "Flag of offline action", "0-No offline action/1-Offline action"]
     PWR = [13, "Flag or motor enable energy", "0-ENA/1-OFF"]
     ZERO = [14, "Flag of end of the zeroing", "0-No zeroing,during zeroing/1-zeroing end"]
-    S5 = [15, "Status of Sensor 5", "0-low level/1-high level"]
-    S6 = [16, "Status of Sensor 6", "0-low level/1-high level"]
+    S5 = [16, "Status of Sensor 5", "0-low level/1-high level"]
+    S6 = [17, "Status of Sensor 6", "0-low level/1-high level"]
     OTS = [20, "Over heat", "0-normal/1-Over heating protection"]
     OCP = [21, "Over current", "0-normal/1-Over current protection"]
     UV = [22, "Under Voltage", "0-normal/1-Under voltage protection"]
@@ -267,6 +267,7 @@ SafeInf = [
     StatusValueTable.ENC_ERR, StatusValueTable.FLASH_ERR, StatusValueTable.FLT,
     StatusValueTable.CMD_WRG
 ]
+
 SensorInf = [
     StatusValueTable.S1, StatusValueTable.S2, StatusValueTable.S3, StatusValueTable.S4, StatusValueTable.S5,
     StatusValueTable.S6,
@@ -460,10 +461,10 @@ class CommonCMD(object):
         elif name == "Z":
             tar = DeviceTable.SliderZ
         if unsafe:
-            if name == "X0":
-                tar = DeviceTable.SliderX0
             if name == "X1":
                 tar = DeviceTable.SliderX1
+            if name == "X2":
+                tar = DeviceTable.SliderX2
 
         if tar is None:
             raise Exception("Target device not found")

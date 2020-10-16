@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="VSMD",
-    version="0.2.3",
+    version="0.2.6",
     author="jiangxt",
     author_email="624099049@qq.com",
     description="Controller for VSMD CAN motor",
@@ -22,3 +22,5 @@ setuptools.setup(
     python_requires='>=3.5',
     install_requires=['python-can'],
 )
+#python setup.py sdist bdist_wheel
+#twine upload --repository pypi dist/*

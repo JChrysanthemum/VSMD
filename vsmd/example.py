@@ -83,15 +83,15 @@ def random_move_test():
 
 # print(hex2int32("feeeeeee"))
 # print(CommonCMD.read_data_regs("All", DataRegTable.CID, 1))
-# print(CommonCMD.read_status_regs("All", StatusRegTable.SPD, 1))
-# print(CommonCMD.read_data_regs("All", DataRegTable.ZMD, 1))
-print(CommonCMD.write_data_regs("All", DataRegTable.MSR_MSV_PSR_PSV, "05000600"))
+print(CommonCMD.read_status_regs("All", StatusRegTable.STATUS, 1))
+# print(CommonCMD.read_data_regs("All", DataRegTable.ZAR, 1))
+# print(CommonCMD.write_data_regs("All", DataRegTable.MSR_MSV_PSR_PSV, "05000600"))
 # initialize_motor(_cid=4)
 # random_move_test()
 # for cmd in [
 #     CommonCMD.enable_motor("All"),
-#     CommonCMD.move_dis("All", 200),
+#     CommonCMD.move_dis("X0", -200),
 #     CommonCMD.stop_motor("All")
 # ]:
 #     print(cmd)
-# print(CommonCMD.read_data_regs("All", DataRegTable.MCS, 1))
+# print(CommonCMD.read_data_regs("All", DataRegTable.MSR_MSV_PSR_PSV, 1))
